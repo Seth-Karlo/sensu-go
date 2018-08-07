@@ -27,6 +27,8 @@ check requests and use its default value instead.
 message on startup failure.
 - `Issued` & `History` are now set on keepalive events.
 - Resolves a potential panic in `sensuctl cluster health`.
+- Fixed an issue where adhoc checks would not be issued to all agents in a
+clustered installation.
 
 ## [2.0.0-beta.3-1] - 2018-08-02
 
