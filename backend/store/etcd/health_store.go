@@ -9,15 +9,19 @@ import (
 	"github.com/sensu/sensu-go/types"
 )
 
-func (s *Store) GetClusterHealth(ctx context.Context) []*types.ClusterHealth {
-	var healthList []*types.ClusterHealth
+func (s *Store) GetClusterHealth(ctx context.Context) *types.HealthResponse {
+	healthResponse := &types.HealthResponse{}
 
+	alarmResponse, err := s.client.Maintenance.AlarmList(ctx)
+	if err == nil {
+		healthResponse.Alarms = alarmResponse.Alarms
+	}
 	// Do a get op against every cluster member. Collect the  memberIDs and
 	// op errors into a response map, and return this map as etcd health
 	// information.
 	mList, err := s.client.MemberList(context.Background())
 	if err != nil {
-		return healthList
+		return healthResponse
 	}
 
 	for _, member := range mList.Members {
@@ -34,7 +38,7 @@ func (s *Store) GetClusterHealth(ctx context.Context) []*types.ClusterHealth {
 		if err != nil {
 			health.Err = cliErr
 			health.Healthy = false
-			healthList = append(healthList, health)
+			healthResponse.ClusterHealth = append(healthResponse.ClusterHealth, health)
 			continue
 		}
 		_, getErr := cli.Get(context.Background(), "health")
@@ -47,7 +51,12 @@ func (s *Store) GetClusterHealth(ctx context.Context) []*types.ClusterHealth {
 			health.Healthy = false
 		}
 
-		healthList = append(healthList, health)
+		healthResponse.ClusterHealth = append(healthResponse.ClusterHealth, health)
 	}
-	return healthList
+
+	alarmResponse, err = s.client.Maintenance.AlarmList(ctx)
+	if err == nil {
+		healthResponse.Alarms = alarmResponse.Alarms
+	}
+	return healthResponse
 }
